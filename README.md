@@ -1,2 +1,2 @@
 # stellar-observables-emulator
-This is an Emulator for Stellar observables .
+I present pitchfork –a multilayer perceptron neural network with a branching architecture capable of rapid emulation of both classical stellar observables and individual asteroseismic oscillation modes of solar-like oscillators.
