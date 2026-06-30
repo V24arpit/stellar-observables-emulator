@@ -4,11 +4,16 @@ import matplotlib.pyplot as plt
 import astro_seis
 from sklearn.decomposition import PCA
 
-with h5py.File(r"C:\Users\Arpit\Downloads\windows_11_cursors_concept_by_jepricreations_densjkc\dark\Garstec_GS98_highMassMS.hdf5","r") as f:
+# this file by default uses 1000 training tracks and 200 validation tracks.
+# most of the structure is similar to classical observables.
+with h5py.File(r"file path here","r") as f:
     X_train= []
     Y_train = []
     X_test = []
     Y_test = [] 
+# this function basically extracts the frequency for radial order between 11 to 27 (both included) and for l=0,1,2
+# and if the model dosent met this requirment then its discarded.
+# you can edit this as your desire just change the numbers.
     def extrct_freq(track,i):
         freq = track["osc"][i,0]
         lval = track["osckey"][i,0]
@@ -28,7 +33,7 @@ with h5py.File(r"C:\Users\Arpit\Downloads\windows_11_cursors_concept_by_jepricre
     
     tracks = f["grid"]["tracks"]
     all_tracks = sorted(list(tracks.keys()))
-    training_tracks = all_tracks[:1000]
+    training_tracks = all_tracks[:1000]   
     testing_tracks  = all_tracks[1000:1200]
     
     for track_name in training_tracks:
@@ -62,6 +67,8 @@ Y_test = np.array(Y_test)
 print(X_train.shape)
 print(Y_train.shape)
 
+# this block of code appies pca as there are 51 frequencies .
+# so thats why pca is applied turning them to 8 pca coefficients.
 pca = PCA(n_components=8)
 Y_train_pca = pca.fit_transform(Y_train)
 Y_test_pca = pca.transform(Y_test)
@@ -96,7 +103,7 @@ Y_scaled_test = (Y_test_pca - y_mean)/y_std
 
 
 net = astro_seis.Astro_seis([5,128,128,128,128,128,128,8])
-"""net.load_model("astro.npz")
+"""net.load_model("zip file path here")
 print("Previous model loaded")"""
 
 training_data = []
@@ -113,8 +120,9 @@ for i in range(len(X_scaled_test)):
 
 
 train_y , val_y = net.sgd(training_data,validation_data,epochs=30,mini_batches_size=64,eta=0.001)
-net.save_model("astro.npz",x_mean,x_std,y_mean,y_std)
+net.save_model("zip file path here",x_mean,x_std,y_mean,y_std)
 
+# this block calculates error .
 error_l0 = []
 error_l1 = []
 error_l2 = []
@@ -129,6 +137,7 @@ for x,y in validation_data:
     error_l1.append((actual_freq[17]-pred_freq[17])/actual_freq[17])
     error_l2.append((actual_freq[34]-pred_freq[34])/actual_freq[34])
     
+# plotting part is done here .    
 train_y = np.array(train_y)
 val_y = np.array(val_y)
 x_axis_list = []
@@ -164,62 +173,3 @@ for a in ax:
 plt.tight_layout()
 plt.show()
 
-'''
-numax_error = []
-dnufit_error = []
-tau0_error = []
-model_no = []
-
-for i,(x,y) in enumerate(validation_data):
-    pred = net.prediction(x)
-    actual = y.flatten()
-    pred = pred.flatten()
-
-    actual = actual * y_std +y_mean
-    pred = pred * y_std +y_mean
-
-    actual_numax = 10**actual[0]
-    pred_numax = 10**pred[0]
-
-    actual_dnufit = 10**actual[1]
-    pred_dnufit = 10**pred[1]
-
-    actual_tau0 = 10**actual[2]
-    pred_tau0 = 10**pred[2]
-
-    err_numax = (actual_numax - pred_numax)/actual_numax
-    err_dnufit = (actual_dnufit - pred_dnufit)/actual_dnufit
-    err_tau0 = (actual_tau0 - pred_tau0)/actual_tau0
-
-    numax_error.append(err_numax)
-    dnufit_error.append(err_dnufit)
-    tau0_error.append(err_tau0)
-    model_no.append(i)
-
-
-
-fig,ax = plt.subplots(2,2,figsize = (12,8))
-
-ax[0,0].hist(numax_error,bins = 50,color= "royalblue",edgecolor="black")
-ax[0,0].set_title(r"$\nu_{max}$' Relative Error")
-ax[0,0].set_xlabel("(Actual-Pred)/Actual")
-ax[0,0].set_ylabel("Frequency")
-ax[0,0].grid(True,alpha=0.2)
-
-
-ax[0,1].hist(dnufit_error,bins= 50,color= "royalblue",edgecolor="black")
-ax[0,1].set_title(r"$\delta\nu$ Relative Error")
-ax[0,1].set_xlabel("(Actual-Pred)/Actual")
-ax[0,1].set_ylabel("Frequency")
-ax[0,1].grid(True,alpha =0.2)
-
-ax[1,0].hist(tau0_error,bins=50,color= "royalblue",edgecolor="black")
-ax[1,0].set_title("Acoustic Radius Relative Error")
-ax[1,0].set_xlabel("(Actual-Pred)")
-ax[1,0].set_ylabel("Frequency")
-ax[1,0].grid(True,alpha=0.2)
-
-ax[1,1].axis("off")
-plt.tight_layout()
-plt.show()
-'''
